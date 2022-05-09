@@ -95,6 +95,22 @@ void SimpleEqAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlo
 {
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
+
+    // Prepare our left & right ProcessorChain
+    juce::dsp::ProcessSpec specs;
+
+    // Maximum number of sample processed at once
+    specs.maximumBlockSize = samplesPerBlock;
+
+    // Number of channels, monoChains can only handle 1 channel at a time
+    specs.numChannels = 1;
+
+    // Sample rate
+    specs.sampleRate = sampleRate;
+
+    // Set the specs to each channel
+    this->leftChain.prepare(specs);
+    this->rightChain.prepare(specs);
 }
 
 void SimpleEqAudioProcessor::releaseResources()
@@ -144,18 +160,24 @@ void SimpleEqAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelData = buffer.getWritePointer (channel);
+    // This wraps the audio buffer
+    juce::dsp::AudioBlock<float> block(buffer);
 
-        // ..do something to the data...
-    }
+    // Get audio blocks
+    // Extracting the left channel
+    auto leftBlock = block.getSingleChannelBlock(0);
+    // Extracting the left channel
+    auto rightBlock = block.getSingleChannelBlock(1);
+
+    // Create processing context to wrap audio blocks
+    juce::dsp::ProcessContextReplacing<float> leftContext(leftBlock);
+    juce::dsp::ProcessContextReplacing<float> rightContext(rightBlock);
+
+    // Pass contexts to ProcessChain
+    this->leftChain.process(leftContext);
+    this->rightChain.process(rightContext);
+
+
 }
 
 //==============================================================================

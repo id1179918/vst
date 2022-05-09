@@ -62,6 +62,12 @@ public:
             "Parameters",
             createParameterLayout()};
 private:
+    using filter = juce::dsp::IIR::Filter<float>;
+    using cutFilter = juce::dsp::ProcessorChain<filter, filter, filter, filter>;
+    using monoChain = juce::dsp::ProcessorChain<cutFilter, filter, cutFilter>;
+
+    monoChain leftChain, rightChain;
+
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SimpleEqAudioProcessor)
 };
