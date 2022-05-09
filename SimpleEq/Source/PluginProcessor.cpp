@@ -183,9 +183,98 @@ void SimpleEqAudioProcessor::setStateInformation (const void* data, int sizeInBy
     // whose contents will have been created by the getStateInformation() call.
 }
 
+
 //==============================================================================
 // This creates new instances of the plugin..
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new SimpleEqAudioProcessor();
+}
+
+
+
+
+
+
+/*
+  ==============================================================================
+
+    The below code is independant from the Juce plugin Processor.
+
+  ==============================================================================
+*/
+
+juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
+{
+    // Collection of parameters
+    juce::AudioProcessorValueTreeState::ParameterLayout layout;
+    // String collection of different slopes choices for the frequency cut
+    juce::StringArray cutSlopes;
+
+    for (int i = 0, i < 4; i++) {
+        juce::String newSlope;
+        newSlope << (12 + (i * 12));
+        newSlope << " dB/Oct";
+        cutSlopes.add(newSlope);
+    }
+
+    // Frequency range (range start freq, Range end freq, Range step, Range skew step)
+    // Skew range determines if the response is linear or not
+    juce::NormalisableRange<float> frequencyRange(20.f, 20000.f, 1.f, 1.f);
+
+    // Gain range (range start gain, Range end gain, Range step, Range skew step)
+    // -24dB, 24dB, 0.5 dB as step, 0.5dB step is uniform
+    juce::NormalisableRange<float> gainRange(-24.f, 24.f, 0.5f, 1.f);
+
+    // Peak tightness/wideness range (range start gain, Range end gain, Range step, Range skew step)
+    juce::NormalisableRange<float> tightnessRange(0.1f, 10.f, 0.05f, 1.f);
+
+    // Adding a LowCut Freq parameter of type float to the ParameterLayout
+    // (Param ID, Param name, juce::NormalisableRange<float>, Param default value)
+    layout.add(std::make_unique<juce::AudioParameterFloat>("LowCut Frequency",
+        "LowCut Frequency",
+        frequencyRange,
+        20.f);
+    )
+
+    // Adding a HighCut Freq parameter of type float to the ParameterLayout
+    layout.add(std::make_unique<juce::AudioParameterFloat>("HighCut Frequency",
+        "HighCut Frequency",
+        frequencyRange,
+        20000.f);
+    )
+
+    // Adding a Peak Freq parameter of type float to the ParameterLayout
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak (1) Frequency",
+        "Peak (1) Frequency",
+        frequencyRange,
+        1000.f);
+
+    // Adding a Peak Gain parameter of type float to the ParameterLayout
+    // This parameter will control the effective gain of the Peak frequency
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak (1) Gain",
+        "Peak (1) Gain",
+        gainRange,
+        0.f);
+
+    // Adding a Peak tightness parameter of type float to the ParameterLayout
+    // This parameter will define the tightness/wideness of the frequency range
+    // the Peak Fresquency applies too.
+    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak (1) Tightness",
+        "Peak (1) Tightness",
+        gainRange,
+        1.f);
+
+    // Adding a frequency cut slope type parameter of type choice
+    // These parameter will select a given slope for the frequency cut,
+    // i.e. progressive, steep, brickwall...
+    layout.add(std::make_unique<juce::AudioParameterChoice>("LowCut Slope",
+        "LowCut Slope",
+        cutSlopes,
+        0);
+
+    layout.add(std::make_unique<juce::AudioParameterChoice>("HighCut Slope",
+        "HighCut Slope",
+        cutSlopes,
+        0);
 }
