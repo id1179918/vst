@@ -277,4 +277,6 @@ juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
         "HighCut Slope",
         cutSlopes,
         0);
+
+    return (layout);
 }
